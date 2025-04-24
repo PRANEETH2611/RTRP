@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker-creds')
+        DOCKERHUB_USER = 'praneeth2611' // 🔁 Replace with your actual DockerHub username
+        DOCKERHUB_CREDENTIALS = credentials('docker-creds') // 🔐 Jenkins credentials ID
     }
 
     stages {
@@ -47,21 +48,21 @@ pipeline {
                 stage('Build Java Docker Image') {
                     steps {
                         script {
-                            docker.build('your-dockerhub-username/java-app', './java-app')
+                            docker.build("${DOCKERHUB_USER}/java-app", './java-app')
                         }
                     }
                 }
                 stage('Build Go Docker Image') {
                     steps {
                         script {
-                            docker.build('your-dockerhub-username/go-app', './go-app')
+                            docker.build("${DOCKERHUB_USER}/go-app", './go-app')
                         }
                     }
                 }
                 stage('Build PHP Docker Image') {
                     steps {
                         script {
-                            docker.build('your-dockerhub-username/php-app', './php-app')
+                            docker.build("${DOCKERHUB_USER}/php-app", './php-app')
                         }
                     }
                 }
@@ -71,10 +72,10 @@ pipeline {
         stage('Push Docker Images to DockerHub') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'your-dockerhub-credentials-id') {
-                        docker.image('your-dockerhub-username/java-app').push()
-                        docker.image('your-dockerhub-username/go-app').push()
-                        docker.image('your-dockerhub-username/php-app').push()
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
+                        docker.image("${DOCKERHUB_USER}/java-app").push()
+                        docker.image("${DOCKERHUB_USER}/go-app").push()
+                        docker.image("${DOCKERHUB_USER}/php-app").push()
                     }
                 }
             }
@@ -83,7 +84,9 @@ pipeline {
 
     post {
         always {
-            sh 'docker logout'
+            script {
+                sh 'docker logout'
+            }
         }
     }
 }
