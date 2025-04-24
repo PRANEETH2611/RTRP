@@ -1,19 +1,11 @@
-# Use Golang base image
-FROM golang:1.19
+FROM golang:1.24.2
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the Go application code to the container
 COPY . .
 
-
-
-# Build the Go application
 RUN go build -o myapp .
 
-# Expose the port on which the app will run
 EXPOSE 8080
 
-# Run the Go app
 CMD ["./myapp"]
