@@ -7,8 +7,7 @@ WORKDIR /app
 # Copy the Go application code to the container
 COPY . .
 
-# Install dependencies
-RUN go mod init my-app
+
 
 # Build the Go application
 RUN go build -o myapp .
