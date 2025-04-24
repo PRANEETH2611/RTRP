@@ -9,25 +9,25 @@ pipeline {
     stages {
         stage('Build Java App') {
             steps {
-                dir('java-app') {
-                    bat 'mvn clean package'
-                }
+                bat '''
+                docker run --rm -v "%CD%\\java-app":/app -w /app maven:3.9.6-eclipse-temurin-17 mvn clean package
+                '''
             }
         }
 
         stage('Build Go App') {
             steps {
-                dir('go-app') {
-                    bat 'go build -o myapp.exe'
-                }
+                bat '''
+                docker run --rm -v "%CD%\\go-app":/app -w /app golang:1.22 go build -o myapp.exe
+                '''
             }
         }
 
         stage('Build PHP App') {
             steps {
-                dir('php-app') {
-                    bat 'php -v'
-                }
+                bat '''
+                docker run --rm -v "%CD%\\php-app":/app -w /app php:8.3-cli php -v
+                '''
             }
         }
 
