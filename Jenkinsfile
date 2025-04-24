@@ -2,19 +2,15 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER = 'praneeth2611' // 🔁 Replace with your actual DockerHub username
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') // 🔐 Jenkins credentials ID
+        DOCKERHUB_USER = 'praneeth2611'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
     }
 
     stages {
         stage('Build Java App') {
             steps {
                 dir('java-app') {
-                    script {
-                        docker.image('maven:3.9.6-eclipse-temurin-17').inside {
-                            sh 'mvn clean package'
-                        }
-                    }
+                    bat 'mvn clean package'
                 }
             }
         }
@@ -22,11 +18,7 @@ pipeline {
         stage('Build Go App') {
             steps {
                 dir('go-app') {
-                    script {
-                        docker.image('golang:1.22').inside {
-                            sh 'go build -o myapp'
-                        }
-                    }
+                    bat 'go build -o myapp.exe'
                 }
             }
         }
@@ -34,11 +26,7 @@ pipeline {
         stage('Build PHP App') {
             steps {
                 dir('php-app') {
-                    script {
-                        docker.image('php:8.3-cli').inside {
-                            sh 'php -v'
-                        }
-                    }
+                    bat 'php -v'
                 }
             }
         }
@@ -47,23 +35,17 @@ pipeline {
             parallel {
                 stage('Build Java Docker Image') {
                     steps {
-                        script {
-                            docker.build("${DOCKERHUB_USER}/java-app", './java-app')
-                        }
+                        bat "docker build -t %DOCKERHUB_USER%/java-app ./java-app"
                     }
                 }
                 stage('Build Go Docker Image') {
                     steps {
-                        script {
-                            docker.build("${DOCKERHUB_USER}/go-app", './go-app')
-                        }
+                        bat "docker build -t %DOCKERHUB_USER%/go-app ./go-app"
                     }
                 }
                 stage('Build PHP Docker Image') {
                     steps {
-                        script {
-                            docker.build("${DOCKERHUB_USER}/php-app", './php-app')
-                        }
+                        bat "docker build -t %DOCKERHUB_USER%/php-app ./php-app"
                     }
                 }
             }
@@ -71,21 +53,13 @@ pipeline {
 
         stage('Push Docker Images to DockerHub') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
-                        docker.image("${DOCKERHUB_USER}/java-app").push()
-                        docker.image("${DOCKERHUB_USER}/go-app").push()
-                        docker.image("${DOCKERHUB_USER}/php-app").push()
-                    }
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                    bat "docker push %DOCKERHUB_USER%/java-app"
+                    bat "docker push %DOCKERHUB_USER%/go-app"
+                    bat "docker push %DOCKERHUB_USER%/php-app"
+                    bat 'docker logout'
                 }
-            }
-        }
-    }
-
-    post {
-        always {
-            script {
-                sh 'docker logout'
             }
         }
     }
