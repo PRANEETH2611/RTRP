@@ -1,32 +1,47 @@
 pipeline {
     agent any
 
+    triggers {
+        githubPush() // This triggers the pipeline on every push to GitHub
+    }
+
     environment {
-        DOCKER_HUB_CREDENTIALS = 'docker-hub-credentials-id'
+        DOCKERHUB_USER = 'praneeth2611'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        LOCAL_PORT = '8080'  // Example port for Java app (adjust for your apps)
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/your-repo.git'  // Checkout code from GitHub
-            }
-        }
-
         stage('Build Java App') {
             steps {
-                sh 'mvn clean install'  // Build Java app (Maven)
+                script {
+                    echo 'Building Java app...'
+                    bat '''
+                    docker run --rm -v "%CD%\\java-app":/app -w /app maven:3.9.6-eclipse-temurin-17 mvn clean package
+                    '''
+                }
             }
         }
 
         stage('Build Go App') {
             steps {
-                sh 'docker run --rm -v "$PWD:/app" -w /app golang:1.22 go build -o myapp.exe'  // Build Go app
+                script {
+                    echo 'Building Go app...'
+                    bat '''
+                    docker run --rm -v "%CD%\\go-app":/app -w /app golang:1.22 go build -o myapp.exe
+                    '''
+                }
             }
         }
 
         stage('Build PHP App') {
             steps {
-                sh 'docker run --rm -v "$PWD:/app" -w /app php:8.3-cli php -v'  // Build PHP app
+                script {
+                    echo 'Building PHP app...'
+                    bat '''
+                    docker run --rm -v "%CD%\\php-app":/app -w /app php:8.3-cli php -v
+                    '''
+                }
             }
         }
 
@@ -35,35 +50,40 @@ pipeline {
                 stage('Build Java Docker Image') {
                     steps {
                         script {
-                            docker.build('praneeth2611/java-app', './java-app')  // Build Docker image for Java
+                            echo 'Building Java Docker image...'
+                            bat "docker build -t %DOCKERHUB_USER%/java-app ./java-app"
                         }
                     }
                 }
                 stage('Build Go Docker Image') {
                     steps {
                         script {
-                            docker.build('praneeth2611/go-app', './go-app')  // Build Docker image for Go
+                            echo 'Building Go Docker image...'
+                            bat "docker build -t %DOCKERHUB_USER%/go-app ./go-app"
                         }
                     }
                 }
                 stage('Build PHP Docker Image') {
                     steps {
                         script {
-                            docker.build('praneeth2611/php-app', './php-app')  // Build Docker image for PHP
+                            echo 'Building PHP Docker image...'
+                            bat "docker build -t %DOCKERHUB_USER%/php-app ./php-app"
                         }
                     }
                 }
             }
         }
 
-        stage('Push Docker Images') {
+        stage('Push Docker Images to DockerHub') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials-id', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                        sh 'docker push praneeth2611/java-app'
-                        sh 'docker push praneeth2611/go-app'
-                        sh 'docker push praneeth2611/php-app'
+                    echo 'Pushing Docker images to DockerHub...'
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                        bat "docker push %DOCKERHUB_USER%/java-app"
+                        bat "docker push %DOCKERHUB_USER%/go-app"
+                        bat "docker push %DOCKERHUB_USER%/php-app"
+                        bat 'docker logout'
                     }
                 }
             }
@@ -72,30 +92,32 @@ pipeline {
         stage('Deploy Locally') {
             steps {
                 script {
-                    // Use Docker or Docker Compose to deploy locally
-                    sh 'docker-compose up -d'  // Or use docker run commands for each container
-                }
-            }
-        }
+                    echo 'Deploying Docker images locally...'
 
-        stage('Post-Deployment Test') {
-            steps {
-                script {
-                    // Run tests to check if the app is deployed correctly (e.g., curl for health check)
-                    sh 'curl http://localhost:8080/actuator/health'
+                    // Pull the latest images from DockerHub
+                    bat "docker pull %DOCKERHUB_USER%/java-app"
+                    bat "docker pull %DOCKERHUB_USER%/go-app"
+                    bat "docker pull %DOCKERHUB_USER%/php-app"
+
+                    // Run Docker containers locally
+                    // Example for Java app on port 8080, adjust for your other apps
+
+                    bat "docker run -d -p %LOCAL_PORT%:8080 --name java-app %DOCKERHUB_USER%/java-app"
+                    bat "docker run -d -p 8081:8080 --name go-app %DOCKERHUB_USER%/go-app"  // Example for Go app
+                    bat "docker run -d -p 8082:80 --name php-app %DOCKERHUB_USER%/php-app"  // Example for PHP app
+
+                    echo 'Local deployment complete!'
                 }
             }
         }
     }
-
+    
     post {
         success {
-            echo 'Deployment Successful!'
-            // Send success notification (e.g., email or Slack)
+            echo 'Pipeline executed successfully!'
         }
         failure {
-            echo 'Deployment Failed!'
-            // Send failure notification (e.g., email or Slack)
+            echo 'Pipeline failed!'
         }
     }
 }
