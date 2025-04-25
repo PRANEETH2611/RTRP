@@ -13,6 +13,6 @@ public class DemoApplication {
 
     @GetMapping("/")
     public String home() {
-        return "Hello All!This is a java program deployed locally.";
+        return "Hello All!This is Java APP";
     }
 }
