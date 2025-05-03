@@ -1,0 +1,204 @@
+TASK 3A : ROUND ROBIN CPU SCHEDULING ALGORITHM
+
+#include <stdio.h>
+
+int main() {
+    int n, quantum;
+    
+    // Input the number of processes and time quantum
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+    printf("Enter the time quantum: ");
+    scanf("%d", &quantum);
+    
+    int burst_time[n], remaining_time[n], waiting_time[n], turnaround_time[n];
+    int total_waiting_time = 0, total_turnaround_time = 0;
+    
+    // Input burst time for each process
+    for (int i = 0; i < n; i++) {
+        printf("Enter burst time for process %d: ", i + 1);
+        scanf("%d", &burst_time[i]);
+        remaining_time[i] = burst_time[i];
+    }
+    
+    int time = 0;
+    int remaining_processes = n;
+    
+    // Round Robin scheduling algorithm
+    while (remaining_processes > 0) {
+        for (int i = 0; i < n; i++) {
+            if (remaining_time[i] > 0) {
+                if (remaining_time[i] > quantum) {
+                    remaining_time[i] -= quantum;
+                    time += quantum;
+                } else {
+                    time += remaining_time[i];
+                    waiting_time[i] = time - burst_time[i];
+                    turnaround_time[i] = waiting_time[i] + burst_time[i];
+                    total_waiting_time += waiting_time[i];
+                    total_turnaround_time += turnaround_time[i];
+                    remaining_time[i] = 0;
+                    remaining_processes--;
+                }
+            }
+        }
+    }
+
+    // Output results
+    printf("\nProcess ID\tBurst Time\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t\t%d\t\t%d\t\t%d\n", i + 1, burst_time[i], waiting_time[i], turnaround_time[i]);
+    }
+    
+    printf("\nAverage Waiting Time: %.2f\n", (float)total_waiting_time / n);
+    printf("Average Turnaround Time: %.2f\n", (float)total_turnaround_time / n);
+    
+    return 0;
+}
+
+===========================================================================================================================
+TASK 3B: SHORTEST JOB FIRST(SJF)
+
+#include <stdio.h>
+
+int main() {
+    int n;
+    scanf("%d", &n);
+    
+    int burst_time[n], waiting_time[n], turnaround_time[n], total_waiting_time = 0, total_turnaround_time = 0;
+    
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &burst_time[i]);
+    }
+    
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (burst_time[i] > burst_time[j]) {
+                int temp = burst_time[i];
+                burst_time[i] = burst_time[j];
+                burst_time[j] = temp;
+            }
+        }
+    }
+    
+    for (int i = 0; i < n; i++) {
+        if (i == 0) {
+            waiting_time[i] = 0;
+        } else {
+            waiting_time[i] = 0;
+            for (int j = 0; j < i; j++) {
+                waiting_time[i] += burst_time[j];
+            }
+        }
+        turnaround_time[i] = waiting_time[i] + burst_time[i];
+        total_waiting_time += waiting_time[i];
+        total_turnaround_time += turnaround_time[i];
+    }
+    
+    for (int i = 0; i < n; i++) {
+        printf("%d %d %d\n", burst_time[i], waiting_time[i], turnaround_time[i]);
+    }
+    
+    printf("%.2f\n", (float)total_waiting_time / n);
+    printf("%.2f\n", (float)total_turnaround_time / n);
+    
+    return 0;
+}
+==========================================================================================================
+TASK 3C : FIRST COME FIRST SERVE
+
+#include <stdio.h>
+
+int main() {
+    int n;
+    scanf("%d", &n);
+    
+    int burst_time[n], waiting_time[n], turnaround_time[n], total_waiting_time = 0, total_turnaround_time = 0;
+    
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &burst_time[i]);
+    }
+    
+    for (int i = 0; i < n; i++) {
+        if (i == 0) {
+            waiting_time[i] = 0;
+        } else {
+            waiting_time[i] = 0;
+            for (int j = 0; j < i; j++) {
+                waiting_time[i] += burst_time[j];
+            }
+        }
+        turnaround_time[i] = waiting_time[i] + burst_time[i];
+        total_waiting_time += waiting_time[i];
+        total_turnaround_time += turnaround_time[i];
+    }
+    
+    for (int i = 0; i < n; i++) {
+        printf("%d %d %d\n", burst_time[i], waiting_time[i], turnaround_time[i]);
+    }
+    
+    printf("%.2f\n", (float)total_waiting_time / n);
+    printf("%.2f\n", (float)total_turnaround_time / n);
+    
+    return 0;
+}
+=============================================================================================================
+
+TASK 3D : PRIORITY CPU SCHEDULING 
+
+#include <stdio.h>
+
+int main() {
+    int n;
+    scanf("%d", &n);
+    
+    int burst_time[n], priority[n], waiting_time[n], turnaround_time[n];
+    int total_waiting_time = 0, total_turnaround_time = 0;
+    
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &burst_time[i]);
+    }
+    
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &priority[i]);
+    }
+    
+    // Sorting based on priority (lower priority value means higher priority)
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (priority[i] > priority[j]) {
+                // Swap burst time
+                int temp_burst = burst_time[i];
+                burst_time[i] = burst_time[j];
+                burst_time[j] = temp_burst;
+                // Swap priority
+                int temp_priority = priority[i];
+                priority[i] = priority[j];
+                priority[j] = temp_priority;
+            }
+        }
+    }
+    
+    for (int i = 0; i < n; i++) {
+        if (i == 0) {
+            waiting_time[i] = 0;
+        } else {
+            waiting_time[i] = 0;
+            for (int j = 0; j < i; j++) {
+                waiting_time[i] += burst_time[j];
+            }
+        }
+        turnaround_time[i] = waiting_time[i] + burst_time[i];
+        total_waiting_time += waiting_time[i];
+        total_turnaround_time += turnaround_time[i];
+    }
+    
+    for (int i = 0; i < n; i++) {
+        printf("%d %d %d\n", burst_time[i], waiting_time[i], turnaround_time[i]);
+    }
+    
+    printf("%.2f\n", (float)total_waiting_time / n);
+    printf("%.2f\n", (float)total_turnaround_time / n);
+    
+    return 0;
+}
