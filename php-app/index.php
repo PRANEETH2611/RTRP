@@ -1,3 +1,3 @@
 <?php
-echo "Hello from PHP APPS!";
+echo "Hello Welcome to GRIET!";
 ?>
